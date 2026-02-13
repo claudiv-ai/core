@@ -1,9 +1,10 @@
 /**
- * Core type definitions for Claudiv - Universal Code Generation
+ * Core type definitions for Claudiv - Universal Generation Platform
  */
 
-// Supported target languages and frameworks
-export type TargetLanguage =
+// Supported target types - UNIVERSAL (not just code!)
+export type TargetType =
+  // Programming Languages
   | 'html'
   | 'react'
   | 'vue'
@@ -17,7 +18,44 @@ export type TargetLanguage =
   | 'java'
   | 'csharp'
   | 'ruby'
-  | 'php';
+  | 'php'
+  // Documentation & Concepts
+  | 'markdown'
+  | 'concept'
+  | 'plan'
+  | 'architecture'
+  | 'workflow'
+  | 'rules'
+  | 'definition'
+  | 'memo'
+  | 'documentation'
+  // Data & APIs
+  | 'api-protocol'
+  | 'openapi'
+  | 'graphql-schema'
+  | 'protobuf'
+  | 'database-schema'
+  | 'migration'
+  // Diagrams & Visual
+  | 'mermaid'
+  | 'plantuml'
+  | 'system-design'
+  | 'flowchart'
+  | 'erd'
+  // Infrastructure & Config
+  | 'dockerfile'
+  | 'kubernetes'
+  | 'terraform'
+  | 'ansible'
+  | 'cicd'
+  | 'environment'
+  // Filesystem & Structure
+  | 'filesystem'
+  | 'directory-structure'
+  | 'file-tree';
+
+// Legacy alias for backward compatibility
+export type TargetLanguage = TargetType;
 
 export type TargetFramework =
   | 'none'
@@ -31,6 +69,25 @@ export type TargetFramework =
   | 'actix'
   | 'spring';
 
+/**
+ * Meta-configuration: .cdml files can configure how Claudiv operates
+ */
+export interface ClaudivMetaConfig {
+  model?: 'opus' | 'sonnet' | 'haiku'; // Which Claude model to use
+  useAgents?: boolean; // Use Claude Code agents for generation
+  tools?: string[]; // Which tools Claude can use
+  permissions?: {
+    bash?: string[]; // Allowed bash commands
+    filesystem?: 'read' | 'write' | 'full' | 'none';
+    network?: boolean;
+  };
+  reverseGeneration?: {
+    enabled: boolean;
+    useAgent?: boolean; // Use agent for reverse generation
+    sources?: string[]; // Allowed source types (websites, postman, etc.)
+  };
+}
+
 export interface Config {
   mode: 'cli' | 'api';
   apiKey?: string;
@@ -39,6 +96,7 @@ export interface Config {
   claudeTimeout: number;
   defaultTarget?: TargetLanguage; // Default output language
   defaultFramework?: TargetFramework; // Default framework
+  meta?: ClaudivMetaConfig; // Meta-configuration from .cdml file
 }
 
 export interface HierarchyContext {
