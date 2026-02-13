@@ -59,22 +59,9 @@ export async function serializeToHTML($: CheerioAPI): Promise<string> {
   // Use $.html() to serialize the entire document
   const html = $.html();
 
-  // Format with prettier for consistent indentation
-  try {
-    const prettier = await import('prettier');
-    const formatted = await prettier.format(html, {
-      parser: 'html',
-      printWidth: 120,
-      tabWidth: 4,
-      useTabs: false,
-      htmlWhitespaceSensitivity: 'ignore',
-    });
-    return formatted;
-  } catch (error) {
-    // Fallback to unformatted if prettier fails
-    logger.debug('Prettier formatting failed, using unformatted HTML');
-    return html;
-  }
+  // Format with prettier for consistent indentation (disabled for now)
+  // TODO: Add prettier as optional dependency for better formatting
+  return html;
 }
 
 /**
