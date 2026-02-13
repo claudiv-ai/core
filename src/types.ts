@@ -62,7 +62,30 @@ export type TargetType =
   | 'file-mapping'
   | 'live-monitoring'
   | 'log-report'
-  | 'file-operations-log';
+  | 'file-operations-log'
+  // QA & Testing
+  | 'test-suite'
+  | 'qa-automation'
+  | 'test-execution'
+  | 'test-report'
+  // Debugging
+  | 'debug-trace'
+  | 'debugging'
+  | 'diagnostics'
+  // Desktop & GUI
+  | 'gui-automation'
+  | 'desktop-automation'
+  | 'screenshot'
+  // External Integrations
+  | 'github'
+  | 'jira'
+  | 'slack'
+  | 'email'
+  | 'confluence'
+  // Workflows
+  | 'automation'
+  | 'workflow'
+  | 'chatops';
 
 // Legacy alias for backward compatibility
 export type TargetLanguage = TargetType;
