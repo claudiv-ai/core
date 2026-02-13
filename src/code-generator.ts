@@ -1,14 +1,16 @@
 /**
- * Code generator - extracts code from AI responses and generates spec.code.html
+ * Universal Code Generator - delegates to language-specific generators
  */
 
-import { writeFile, readFile } from 'fs/promises';
+import { writeFile, readFile, chmod } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { load as cheerioLoad } from 'cheerio';
 import { logger } from './utils/logger.js';
 import { parseSpecFile } from './parser.js';
 import { stripCodeBlocks } from './updater.js';
+import { generatorRegistry } from './generators/registry.js';
+import type { ChatPattern, HierarchyContext, TargetLanguage } from './types.js';
 
 interface CodeBlock {
   language: string;
@@ -51,6 +53,42 @@ export function extractCodeBlocks(response: string): CodeBlock[] {
 
   logger.debug(`Extracted ${blocks.length} code block(s) from AI response`);
   return blocks;
+}
+
+/**
+ * Universal code generation - delegates to appropriate generator
+ */
+export async function generateCode(
+  response: string,
+  pattern: ChatPattern,
+  context: HierarchyContext,
+  specFile: string
+): Promise<string> {
+  const { target, framework } = pattern;
+
+  // Get the appropriate generator
+  const generator = generatorRegistry.getOrThrow(target);
+
+  logger.info(`Generating ${target} code${framework ? ` with ${framework}` : ''}...`);
+
+  // Generate code using the language-specific generator
+  const generated = await generator.generate(response, pattern, context);
+
+  // Determine output file path
+  const outputFile = specFile.replace('.cdml', generated.fileExtension);
+
+  // Write generated code
+  await writeFile(outputFile, generated.code, 'utf-8');
+
+  // Make executable if it's a script
+  if (generated.metadata?.executable) {
+    await chmod(outputFile, 0o755);
+    logger.debug(`Made ${outputFile} executable`);
+  }
+
+  logger.success(`Generated ${target} code → ${outputFile}`);
+
+  return outputFile;
 }
 
 /**

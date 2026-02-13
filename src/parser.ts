@@ -20,6 +20,8 @@ import type {
   ElementRegistry,
   HierarchyContext,
   ReferencedElement,
+  TargetLanguage,
+  TargetFramework,
 } from './types.js';
 
 /**
@@ -43,15 +45,23 @@ export function parseSpecFile(content: string): ParsedSpec {
   // Build element registry for cross-referencing
   const registry = buildElementRegistry($);
 
+  // Detect root target language and framework
+  const rootElement = $('*').first();
+  const rootTarget = extractTarget(rootElement) || 'html';
+  const rootFramework = extractFramework(rootElement);
+
   // Detect chat patterns
-  const chatPatterns = detectChatPatterns($, registry);
+  const chatPatterns = detectChatPatterns($, registry, rootTarget, rootFramework);
 
   logger.debug(`Found ${chatPatterns.length} chat pattern(s) to process`);
+  logger.debug(`Root target: ${rootTarget}${rootFramework ? `, framework: ${rootFramework}` : ''}`);
 
   return {
     dom: $,
     chatPatterns,
     registry,
+    rootTarget,
+    rootFramework,
   };
 }
 
@@ -107,9 +117,48 @@ function determineElementType(parentName: string, tagName: string): string {
 }
 
 /**
+ * Extract target language from element or ancestors
+ */
+function extractTarget($element: cheerio.Cheerio<any>): TargetLanguage | null {
+  // Check current element
+  const target = $element.attr('target');
+  if (target) return target as TargetLanguage;
+
+  // Check parent elements
+  const $parent = $element.parent();
+  if ($parent.length > 0) {
+    return extractTarget($parent);
+  }
+
+  return null;
+}
+
+/**
+ * Extract framework from element or ancestors
+ */
+function extractFramework($element: cheerio.Cheerio<any>): TargetFramework | undefined {
+  // Check current element
+  const framework = $element.attr('framework');
+  if (framework) return framework as TargetFramework;
+
+  // Check parent elements
+  const $parent = $element.parent();
+  if ($parent.length > 0) {
+    return extractFramework($parent);
+  }
+
+  return undefined;
+}
+
+/**
  * Detect chat patterns: ANY element with gen/retry/undo attribute
  */
-function detectChatPatterns($: CheerioAPI, registry: ElementRegistry): ChatPattern[] {
+function detectChatPatterns(
+  $: CheerioAPI,
+  registry: ElementRegistry,
+  defaultTarget: TargetLanguage,
+  defaultFramework?: TargetFramework
+): ChatPattern[] {
   const patterns: ChatPattern[] = [];
   const actionAttributes = ['gen', 'retry', 'undo'];
 
@@ -154,6 +203,10 @@ function detectChatPatterns($: CheerioAPI, registry: ElementRegistry): ChatPatte
     // Get element path for tracking
     const elementPath = buildElementPath($, element as Element);
 
+    // Determine target language and framework for this element
+    const target = extractTarget($element) || defaultTarget;
+    const framework = extractFramework($element) || defaultFramework;
+
     patterns.push({
       action,
       element: element as Element,
@@ -162,9 +215,14 @@ function detectChatPatterns($: CheerioAPI, registry: ElementRegistry): ChatPatte
       userMessage,
       context,
       elementPath,
+      target,
+      framework,
     });
 
-    logger.debug(`Found ${action} pattern in <${tagName}> with ${Object.keys(specAttributes).length} spec attributes`);
+    logger.debug(
+      `Found ${action} pattern in <${tagName}> with ${Object.keys(specAttributes).length} spec attributes ` +
+      `(target: ${target}${framework ? `, framework: ${framework}` : ''})`
+    );
   });
 
   return patterns;
