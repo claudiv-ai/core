@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- Global action attributes that can be added to ANY element -->
+  <xs:attributeGroup name="actionAttributes">
+    <xs:attribute name="gen" type="xs:string" fixed="">
+      <xs:annotation>
+        <xs:documentation>Generate: Triggers AI to generate new implementation. Add this attribute to any element to start generation. The attribute will be removed after processing. Generates ALL nested elements except those with "lock" attribute.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="retry" type="xs:string" fixed="">
+      <xs:annotation>
+        <xs:documentation>Retry: Regenerates the AI response. Add this to retry the last generation with the same spec.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="undo" type="xs:string" fixed="">
+      <xs:annotation>
+        <xs:documentation>Undo: Reverts to the previous implementation. Add this to undo the last change.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="lock" type="xs:string" fixed="">
+      <xs:annotation>
+        <xs:documentation>Lock: When used WITH gen/retry/undo, locks all CHILDREN by default (they won't be regenerated unless they have "unlock"). When used on a child element, prevents that child from being regenerated. Can coexist with gen/retry/undo on the same element.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="unlock" type="xs:string" fixed="">
+      <xs:annotation>
+        <xs:documentation>Unlock: Overrides a parent's "lock" attribute, allowing this child element to be regenerated even when parent is locked. Can coexist with gen/retry/undo on the same element.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:attributeGroup>
+
+  <!-- Root element: app -->
+  <xs:element name="app">
+    <xs:annotation>
+      <xs:documentation>Root application container. All UI components are nested within this element.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="theme" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Application theme (e.g., "dark", "light")</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attributeGroup ref="actionAttributes"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Chat element: DEPRECATED - use gen/retry/undo attributes instead -->
+  <xs:element name="chat">
+    <xs:annotation>
+      <xs:documentation>DEPRECATED: Chat wrapper is no longer needed. Use gen/retry/undo attributes directly on elements instead.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="actionAttributes"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- AI element: AI response container (auto-generated) -->
+  <xs:element name="ai">
+    <xs:annotation>
+      <xs:documentation>AI response element - automatically added as a child after processing gen/retry/undo. Contains structured XML response with semantic tags like &lt;changes&gt;, &lt;details&gt;, &lt;summary&gt;, etc. DO NOT create this manually - it's auto-generated.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:element ref="changes" minOccurs="0"/>
+        <xs:element ref="details" minOccurs="0"/>
+        <xs:element ref="summary" minOccurs="0"/>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- AI response structure elements (examples - AI can use any semantic tag names) -->
+  <xs:element name="changes">
+    <xs:annotation>
+      <xs:documentation>Brief description of what was created or modified. Example: &lt;changes&gt;Created a blue button with hover effect&lt;/changes&gt;</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="details">
+    <xs:annotation>
+      <xs:documentation>Detailed breakdown using nested semantic tags. Example: &lt;details&gt;&lt;styling&gt;Blue background&lt;/styling&gt;&lt;effect&gt;Hover darkens&lt;/effect&gt;&lt;/details&gt;</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="summary">
+    <xs:annotation>
+      <xs:documentation>Overall summary of the implementation. Example: &lt;summary&gt;Button component with professional styling and interactive effects&lt;/summary&gt;</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Common UI component elements -->
+  <xs:element name="button">
+    <xs:annotation>
+      <xs:documentation>Button component. Add gen attribute to generate: &lt;button gen&gt;Make a blue button&lt;/button&gt; or use attributes: &lt;button color="blue" size="large" gen /&gt;</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="actionAttributes"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="component">
+    <xs:annotation>
+      <xs:documentation>Generic UI component container. Add gen attribute to generate implementation.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Component name or identifier</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attributeGroup ref="actionAttributes"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="page">
+    <xs:annotation>
+      <xs:documentation>Page container for organizing application views</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string"/>
+      <xs:attribute name="path" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="sidebar">
+    <xs:annotation>
+      <xs:documentation>Sidebar navigation component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="width" type="xs:string"/>
+      <xs:attribute name="position" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="menu">
+    <xs:annotation>
+      <xs:documentation>Menu component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string"/>
+      <xs:attribute name="position" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="form">
+    <xs:annotation>
+      <xs:documentation>Form component for user input</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string"/>
+      <xs:attribute name="action" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="input">
+    <xs:annotation>
+      <xs:documentation>Input field component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:string"/>
+      <xs:attribute name="name" type="xs:string"/>
+      <xs:attribute name="placeholder" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="header">
+    <xs:annotation>
+      <xs:documentation>Header component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="footer">
+    <xs:annotation>
+      <xs:documentation>Footer component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="card">
+    <xs:annotation>
+      <xs:documentation>Card container component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="modal">
+    <xs:annotation>
+      <xs:documentation>Modal dialog component</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="title" type="xs:string"/>
+      <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Reference element -->
+  <xs:element name="ref">
+    <xs:annotation>
+      <xs:documentation>Reference to external resources or files. Use for documentation or linking to external specs.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+      </xs:sequence>
+      <xs:attribute name="url" type="xs:string"/>
+      <xs:attribute name="path" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!--
+    ========================================
+    USAGE EXAMPLES (Attribute-Based Syntax)
+    ========================================
+
+    GENERATE (gen attribute):
+    =======================
+
+    1. Simple content-based:
+       <create-button gen>Make a blue button with text "Click Me"</create-button>
+
+    2. Attribute-based specifications:
+       <my-button
+         title="Get Lucky Number"
+         color="blue"
+         size="large"
+         click="show message"
+         message="the lucky number is {random(0 to 100)}"
+         gen />
+
+    3. Mixed (attributes + content):
+       <login-form username="email" password="required" gen>
+         Add validation and error messages for both fields
+         <submit>POST to /api/login</submit>
+         <redirect>Dashboard on success</redirect>
+       </login-form>
+
+    RETRY (retry attribute):
+    =======================
+
+    Regenerate with same specifications:
+       <my-button color="blue" size="large" retry>
+         Make a button
+         <ai>Previous response will be replaced...</ai>
+       </my-button>
+
+    UNDO (undo attribute):
+    =====================
+
+    Revert to previous implementation:
+       <my-button undo>
+         Make a button
+         <ai>This will be replaced with undo message and code reverted</ai>
+       </my-button>
+
+    KEY CONCEPTS:
+    ============
+
+    - Tag names are freeform - use ANY name that helps organize your thinking
+    - Tag names act as semantic headers for the AI
+    - Attributes are specifications - they're part of the prompt to AI
+    - Content (text + nested elements) provides additional description
+    - gen/retry/undo attributes trigger actions and are removed after processing
+    - AI responses are added as <ai> children with structured XML
+    - No <chat> wrapper needed - just add gen/retry/undo directly to elements!
+
+    AFTER PROCESSING:
+    ================
+
+    Input:
+       <create-button color="blue" gen>Make a button</create-button>
+
+    Output:
+       <create-button color="blue">Make a button
+         <ai>
+           <changes>Created a blue button component</changes>
+           <details>
+             <styling>Applied blue background with white text</styling>
+             <interactive>Added hover effect and transitions</interactive>
+           </details>
+           <summary>Professional button with interactive styling</summary>
+         </ai>
+       </create-button>
+  -->
+
+</xs:schema>
