@@ -10,7 +10,7 @@ import { SpecFileWatcher } from './watcher.js';
 import { parseSpecFile } from './parser.js';
 import { createClaudeClient, verifyClaudeAvailable } from './claude-client.js';
 import { updateSpecWithResponse } from './updater.js';
-import { generateCodeFile, regenerateCodeFromConversation, extractCodeBlocks } from './code-generator.js';
+import { generateCode, regenerateCodeFromConversation, extractCodeBlocks } from './code-generator.js';
 import { DevServer } from './dev-server.js';
 import type { ChatPattern } from './types.js';
 import * as cheerio from 'cheerio';
@@ -146,12 +146,23 @@ async function processChatPattern(
   logger.debug(`  Context: ${elementPath}`);
 
   try {
-    // Read existing code if spec.code.html exists
-    const codeFilePath = config.specFile.replace('.html', '.code.html');
+    // Read existing code file if it exists (extension depends on target language)
+    const targetExtensions: Record<string, string> = {
+      html: '.html',
+      bash: '.sh',
+      python: '.py',
+      javascript: '.js',
+      typescript: '.ts',
+      go: '.go',
+      rust: '.rs',
+    };
+    const ext = targetExtensions[pattern.target] || '.html';
+    const codeFilePath = config.specFile.replace('.cdml', ext);
+
     if (existsSync(codeFilePath)) {
       const existingCode = await readFile(codeFilePath, 'utf-8');
       context.existingCode = existingCode;
-      logger.debug('Loaded existing code for context');
+      logger.debug(`Loaded existing ${pattern.target} code for context`);
     }
 
     // Build full prompt combining element name, attributes, and user message
@@ -184,9 +195,9 @@ async function processChatPattern(
     const codeBlocks = extractCodeBlocks(fullResponse);
     const hasCode = codeBlocks.length > 0;
 
-    // Generate code file first (if there's code)
+    // Generate code file using universal generator (if there's code)
     if (hasCode) {
-      await generateCodeFile(elementPath, fullResponse);
+      await generateCode(fullResponse, pattern, context, config.specFile);
     }
 
     // Update spec.html: remove action attribute and add <ai> child with response
