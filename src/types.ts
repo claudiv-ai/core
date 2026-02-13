@@ -52,7 +52,17 @@ export type TargetType =
   // Filesystem & Structure
   | 'filesystem'
   | 'directory-structure'
-  | 'file-tree';
+  | 'file-tree'
+  // System State & Monitoring
+  | 'system-state'
+  | 'startup-programs'
+  | 'services'
+  | 'system-config'
+  | 'env-vars'
+  | 'file-mapping'
+  | 'live-monitoring'
+  | 'log-report'
+  | 'file-operations-log';
 
 // Legacy alias for backward compatibility
 export type TargetLanguage = TargetType;
@@ -86,6 +96,82 @@ export interface ClaudivMetaConfig {
     useAgent?: boolean; // Use agent for reverse generation
     sources?: string[]; // Allowed source types (websites, postman, etc.)
   };
+  monitoring?: {
+    enabled: boolean;
+    trackFileOps?: boolean; // Track file operations
+    aggregateLogs?: boolean; // Aggregate logs
+    generateReport?: boolean; // Generate structured report
+    hooks?: string[]; // System hooks to listen to
+    startTime?: Date; // When monitoring started
+    stopTime?: Date; // When monitoring stopped
+  };
+}
+
+/**
+ * System monitoring configuration
+ */
+export interface SystemMonitoringConfig {
+  target: TargetType; // Output format for logs/reports
+  trackFileOperations: boolean;
+  trackProcesses: boolean;
+  trackNetworkActivity: boolean;
+  aggregateLogs: boolean;
+  logSources?: string[]; // Paths to log files
+  hooks?: SystemHook[]; // File system hooks
+  reportFormat?: 'markdown' | 'json' | 'html';
+}
+
+/**
+ * System hook for monitoring live changes
+ */
+export interface SystemHook {
+  type: 'file' | 'process' | 'network' | 'service';
+  event: 'create' | 'modify' | 'delete' | 'start' | 'stop' | 'all';
+  path?: string; // For file hooks
+  filter?: string; // Filter pattern
+  action?: 'log' | 'report' | 'notify';
+}
+
+/**
+ * File operation record
+ */
+export interface FileOperation {
+  timestamp: Date;
+  type: 'create' | 'modify' | 'delete' | 'move' | 'chmod';
+  path: string;
+  user?: string;
+  process?: string;
+  details?: Record<string, any>;
+}
+
+/**
+ * System state snapshot
+ */
+export interface SystemState {
+  timestamp: Date;
+  hostname: string;
+  os: string;
+  startupPrograms: Array<{
+    name: string;
+    path: string;
+    enabled: boolean;
+  }>;
+  services: Array<{
+    name: string;
+    status: 'running' | 'stopped' | 'disabled';
+    enabled: boolean;
+  }>;
+  environmentVariables: Record<string, string>;
+  systemConfigs: Array<{
+    file: string;
+    content: string;
+    modified: Date;
+  }>;
+  fileMappings: Array<{
+    source: string;
+    target: string;
+    type: 'symlink' | 'mount' | 'bind';
+  }>;
 }
 
 export interface Config {

@@ -6,6 +6,7 @@ import type { CodeGenerator, TargetLanguage } from '../types.js';
 import { HtmlGenerator } from './html-generator.js';
 import { BashGenerator } from './bash-generator.js';
 import { PythonGenerator } from './python-generator.js';
+import { SystemMonitorGenerator, LiveMonitorGenerator } from './system-monitor-generator.js';
 
 class GeneratorRegistry {
   private generators: Map<TargetLanguage, CodeGenerator> = new Map();
@@ -15,6 +16,8 @@ class GeneratorRegistry {
     this.register(new HtmlGenerator());
     this.register(new BashGenerator());
     this.register(new PythonGenerator());
+    this.register(new SystemMonitorGenerator());
+    this.register(new LiveMonitorGenerator());
   }
 
   /**
