@@ -85,7 +85,30 @@ export type TargetType =
   // Workflows
   | 'automation'
   | 'workflow'
-  | 'chatops';
+  | 'chatops'
+  // Documents & Media
+  | 'pdf'
+  | 'excel'
+  | 'powerpoint'
+  | 'word'
+  | 'csv'
+  | 'json'
+  | 'yaml'
+  | 'toml'
+  | 'xml'
+  | 'css'
+  | 'scss'
+  | 'less'
+  // Images
+  | 'svg'
+  | 'png'
+  | 'jpg'
+  | 'image-ocr'
+  | 'diagram-image'
+  // Audio & Video
+  | 'audio-transcription'
+  | 'video-transcription'
+  | 'subtitle';
 
 // Legacy alias for backward compatibility
 export type TargetLanguage = TargetType;
