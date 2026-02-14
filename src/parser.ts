@@ -170,21 +170,28 @@ function detectChatPatterns(
     const tagName = (element as Element).name;
     const attrs = (element as Element).attribs || {};
 
-    // Check for action attributes
+    // Check for action attributes (gen, retry, undo)
+    // Supports both boolean (gen) and valued (gen="use opus 4.6") forms
     let action: 'gen' | 'retry' | 'undo' | null = null;
+    let actionInstructions: string | undefined;
     for (const attr of actionAttributes) {
       if (attr in attrs) {
         action = attr as 'gen' | 'retry' | 'undo';
+        // Extract instructions from attribute value (e.g. gen="use opus 4.6")
+        const attrValue = attrs[attr];
+        if (attrValue && attrValue.trim() !== '') {
+          actionInstructions = attrValue.trim();
+        }
         break;
       }
     }
 
     if (!action) return;
 
-    // Extract specifications (all attributes except the action attribute)
+    // Extract specifications (all attributes except action and control attributes)
     const specAttributes: Record<string, string> = {};
     for (const [key, value] of Object.entries(attrs)) {
-      if (!actionAttributes.includes(key)) {
+      if (!actionAttributes.includes(key) && key !== 'target' && key !== 'framework' && key !== 'lock' && key !== 'unlock') {
         specAttributes[key] = value;
       }
     }
@@ -192,8 +199,8 @@ function detectChatPatterns(
     // Extract user message (text content + nested elements, excluding <ai> children)
     const userMessage = extractUserMessage($, element as Element);
 
-    if (!userMessage && Object.keys(specAttributes).length === 0) {
-      logger.debug(`Skipping element <${tagName}> with ${action} but no content or attributes`);
+    if (!userMessage && Object.keys(specAttributes).length === 0 && !actionInstructions) {
+      logger.debug(`Skipping element <${tagName}> with ${action} but no content, attributes, or instructions`);
       return;
     }
 
@@ -209,6 +216,7 @@ function detectChatPatterns(
 
     patterns.push({
       action,
+      actionInstructions,
       element: element as Element,
       elementName: tagName,
       specAttributes,

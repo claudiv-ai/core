@@ -165,8 +165,8 @@ async function processChatPattern(
       logger.debug(`Loaded existing ${pattern.target} code for context`);
     }
 
-    // Build full prompt combining element name, attributes, and user message
-    const fullPrompt = buildFullPrompt($, element, elementName, specAttributes, userMessage);
+    // Build full prompt combining element name, attributes, user message, and action instructions
+    const fullPrompt = buildFullPrompt($, element, elementName, specAttributes, userMessage, pattern.actionInstructions);
 
     // Debug: log the prompt to see what's being sent
     logger.debug('=== FULL PROMPT BEING SENT ===');
@@ -223,9 +223,16 @@ function buildFullPrompt(
   element: Element,
   elementName: string,
   specAttributes: Record<string, string>,
-  userMessage: string
+  userMessage: string,
+  actionInstructions?: string
 ): string {
   const parts: string[] = [];
+
+  // Add action instructions if provided (e.g. gen="use opus 4.6")
+  if (actionInstructions) {
+    parts.push(`Generation Instructions: ${actionInstructions}`);
+    parts.push('');
+  }
 
   // Add element name as semantic header
   parts.push(`Element: ${elementName}`);

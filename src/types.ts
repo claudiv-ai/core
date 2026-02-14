@@ -261,6 +261,7 @@ export interface ReferencedElement {
 
 export interface ChatPattern {
   action: 'gen' | 'retry' | 'undo'; // Action type from attribute
+  actionInstructions?: string; // Value of gen/retry/undo attribute (e.g. gen="use opus 4.6")
   element: any; // cheerio element with gen/retry/undo attribute
   elementName: string; // Tag name (semantic header)
   specAttributes: Record<string, string>; // All attributes except action
