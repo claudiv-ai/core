@@ -1,7 +1,7 @@
 {
-  "name": "@claudiv/core",
+  "name": "@amirguterman/claudiv",
   "version": "0.1.0",
-  "description": "Claude in a Div - Conversational UI development with Claude",
+  "description": "Claude in a Div — Universal Declarative Generation Platform",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -51,10 +51,12 @@
     "claudiv",
     "claude",
     "ai",
-    "conversational-ui",
-    "xml",
+    "cdml",
     "code-generation",
-    "spec-driven"
+    "universal",
+    "declarative",
+    "reverse-engineering",
+    "cli"
   ],
   "author": "Amir Guterman",
   "license": "MIT",
