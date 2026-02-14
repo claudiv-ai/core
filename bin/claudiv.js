@@ -4,7 +4,7 @@
  * Claudiv CLI — Universal Declarative Generation Platform
  *
  * Usage:
- *   npx @amirguterman/claudiv <command> [options]
+ *   npx @claudiv/cli <command> [options]
  *   claudiv <command> [options]
  *
  * Commands:
@@ -312,7 +312,7 @@ Universal Declarative Generation Platform
 
 USAGE
   claudiv <command> [name] [options]
-  npx @amirguterman/claudiv <command> [name] [options]
+  npx @claudiv/cli <command> [name] [options]
 
 COMMANDS
   new <name>       Create a new .cdml file
@@ -376,7 +376,7 @@ EXAMPLES
     claudiv gen myapp -w                           Same as above
 
   Run in Empty Folder:
-    npx @amirguterman/claudiv new myapp -t python -g
+    npx @claudiv/cli new myapp -t python -g
 
 FILE FORMAT
   Input:   <name>.cdml
@@ -402,6 +402,6 @@ SPEC SYNTAX
     unlock        Allow regeneration of locked element
 
 MORE INFO
-  https://github.com/amirguterman/claudiv
+  https://github.com/claudiv-ai/claudiv
 `);
 }

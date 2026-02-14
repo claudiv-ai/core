@@ -306,7 +306,7 @@ MIT License - see LICENSE file for details
 
 ## 🔗 Links
 
-- **GitHub**: [claudiv](https://github.com/amirguterman/claudiv)
+- **GitHub**: [claudiv](https://github.com/claudiv-ai/claudiv)
 - **Documentation**: [Full docs](FEATURES-SUMMARY.md)
 - **Claude Code**: [https://code.claude.com](https://code.claude.com)
 

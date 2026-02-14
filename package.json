@@ -1,5 +1,5 @@
 {
-  "name": "@amirguterman/claudiv",
+  "name": "@claudiv/cli",
   "version": "0.1.0",
   "description": "Claude in a Div — Universal Declarative Generation Platform",
   "main": "dist/index.js",
@@ -39,11 +39,11 @@
     "typescript": "^5.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amirguterman/claudiv.git",
+    "url": "git+https://github.com/claudiv-ai/claudiv.git",
     "directory": "packages/core"
   },
   "keywords": [
@@ -60,9 +60,9 @@
   "author": "Amir Guterman",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/amirguterman/claudiv/issues"
+    "url": "https://github.com/claudiv-ai/claudiv/issues"
   },
-  "homepage": "https://github.com/amirguterman/claudiv#readme",
+  "homepage": "https://claudiv.org",
   "engines": {
     "node": ">=20.0.0"
   }
