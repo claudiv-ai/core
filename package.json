@@ -40,11 +40,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/claudiv-ai/claudiv.git",
-    "directory": "packages/core"
+    "url": "git+https://github.com/claudiv-ai/core.git"
   },
   "bugs": {
-    "url": "https://github.com/claudiv-ai/claudiv/issues"
+    "url": "https://github.com/claudiv-ai/core/issues"
   },
   "homepage": "https://claudiv.org",
   "publishConfig": {
