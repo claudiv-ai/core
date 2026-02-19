@@ -10,6 +10,9 @@
  */
 
 import { spawn } from 'child_process';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { createRequire } from 'module';
 import type { AssembledPrompt } from './types.js';
 
 export interface ExecutionResult {
@@ -78,8 +81,38 @@ export async function executeClaudeHeadless(
 
 // ─── CLI Mode ───────────────────────────────────────────────────
 
+/**
+ * Resolve the claude binary — prefer local node_modules, fall back to global.
+ */
+function resolveClaudeBin(): string {
+  // Check local node_modules/.bin/claude (installed as project dependency)
+  const localBin = join(process.cwd(), 'node_modules', '.bin', 'claude');
+  if (existsSync(localBin)) {
+    return localBin;
+  }
+
+  // Try to resolve from @anthropic-ai/claude-code package
+  try {
+    const require = createRequire(import.meta.url);
+    const pkgPath = require.resolve('@anthropic-ai/claude-code/package.json');
+    const pkgBin = join(pkgPath, '..', 'cli.mjs');
+    if (existsSync(pkgBin)) {
+      return pkgBin;
+    }
+  } catch {
+    // Not installed locally
+  }
+
+  // Fall back to global
+  return 'claude';
+}
+
 async function executeCli(prompt: string, config: ExecutorConfig): Promise<string> {
+  const claudeBin = resolveClaudeBin();
   const args = ['--print'];
+
+  // Disable all tools — Claudiv only needs text generation, no file/bash access
+  args.push('--allowedTools', '');
 
   if (config.model) {
     args.push('--model', config.model);
@@ -89,15 +122,23 @@ async function executeCli(prompt: string, config: ExecutorConfig): Promise<strin
     args.push('--max-tokens', String(config.maxTokens));
   }
 
-  // Pass prompt via stdin
+  // Pass prompt via -p flag
   args.push('-p', prompt);
 
   return new Promise((resolve, reject) => {
     const timeout = config.timeoutMs || 120_000;
 
-    const proc = spawn('claude', args, {
+    // Use node to run .mjs files, direct execution for binaries
+    const isScript = claudeBin.endsWith('.mjs') || claudeBin.endsWith('.js');
+    const command = isScript ? process.execPath : claudeBin;
+    const spawnArgs = isScript ? [claudeBin, ...args] : args;
+
+    const env = { ...process.env };
+    delete env.CLAUDECODE;
+
+    const proc = spawn(command, spawnArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
+      env,
     });
 
     let stdout = '';
