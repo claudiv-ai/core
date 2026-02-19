@@ -1,71 +1,52 @@
 /**
- * Hierarchy traversal and context building utilities
+ * Hierarchy traversal and context building utilities.
+ *
+ * Provides DOM navigation helpers for CDML documents.
  */
 
-import type { Cheerio, CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 import type { Element } from 'domhandler';
-import type { ScopeContext, HierarchyContext, ReferencedElement } from '../types.js';
 
 /**
- * Build full hierarchy path for an element
+ * Build full hierarchy path for an element.
  */
 export function buildElementPath($: CheerioAPI, element: Element): string {
   const parts: string[] = [];
   let current: Element | null = element;
 
   while (current && current.type === 'tag') {
-    const $current: any = $(current);
-    const name = current.name;
-    const attrs = current.attribs;
-
-    // Add attributes if any
-    const attrStr = Object.entries(attrs)
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(', ');
-
-    const part = attrStr ? `${name}[${attrStr}]` : name;
-    parts.unshift(part);
-
-    // Move to parent
-    const parent: any = $current.parent();
-    current = parent.length > 0 && parent[0].type === 'tag' ? parent[0] as Element : null;
+    parts.unshift(current.name);
+    const parent: any = $(current).parent();
+    current = parent.length > 0 && parent[0].type === 'tag'
+      ? parent[0] as Element
+      : null;
   }
 
   return parts.join(' > ');
 }
 
 /**
- * Build recursive parent scope chain
+ * Build recursive parent scope chain.
  */
-export function buildScopeChain($: CheerioAPI, element: Element): ScopeContext[] {
-  const scopes: ScopeContext[] = [];
+export function buildScopeChain(
+  $: CheerioAPI,
+  element: Element
+): Array<{ element: string; attributes: Record<string, string>; level: number }> {
+  const scopes: Array<{ element: string; attributes: Record<string, string>; level: number }> = [];
   let current: Element | null = element;
   let level = 0;
 
   while (current && current.type === 'tag') {
-    const $current: any = $(current);
-    const name = current.name;
-    const attrs = current.attribs || {};
-
-    // Build description
-    const attrDescriptions = Object.entries(attrs)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(', ');
-
-    const description = attrDescriptions
-      ? `${name} (${attrDescriptions})`
-      : name;
-
     scopes.unshift({
-      element: name,
-      attributes: attrs,
-      description,
+      element: current.name,
+      attributes: current.attribs || {},
       level,
     });
 
-    // Move to parent
-    const parent: any = $current.parent();
-    current = parent.length > 0 && parent[0].type === 'tag' ? parent[0] as Element : null;
+    const parent: any = $(current).parent();
+    current = parent.length > 0 && parent[0].type === 'tag'
+      ? parent[0] as Element
+      : null;
     level++;
   }
 
@@ -73,112 +54,81 @@ export function buildScopeChain($: CheerioAPI, element: Element): ScopeContext[]
 }
 
 /**
- * Extract all text content from an element (including nested tags)
+ * Get sibling elements of an element.
+ */
+export function getSiblingElements($: CheerioAPI, element: Element): Element[] {
+  const siblings: Element[] = [];
+  $(element).siblings().each((_, sibling) => {
+    if (sibling.type === 'tag') {
+      siblings.push(sibling as Element);
+    }
+  });
+  return siblings;
+}
+
+/**
+ * Get child element tag names.
+ */
+export function getChildElementNames($: CheerioAPI, element: Element): string[] {
+  const names: string[] = [];
+  $(element).children().each((_, child) => {
+    if (child.type === 'tag') {
+      names.push((child as Element).name);
+    }
+  });
+  return names;
+}
+
+/**
+ * Build an FQN string from an element's position in the DOM.
+ */
+export function buildFQNFromPosition(
+  $: CheerioAPI,
+  element: Element,
+  projectName?: string
+): string {
+  const parts: string[] = [];
+
+  if (projectName) {
+    parts.push(projectName);
+  }
+
+  let current: Element | null = element;
+  const stack: string[] = [];
+
+  while (current && current.type === 'tag') {
+    const name = current.attribs?.name || current.name;
+    // Skip structural tags that aren't meaningful for FQN
+    if (!['body', 'html', 'head'].includes(current.name)) {
+      stack.unshift(name);
+    }
+    const parent: any = $(current).parent();
+    current = parent.length > 0 && parent[0].type === 'tag'
+      ? parent[0] as Element
+      : null;
+  }
+
+  parts.push(...stack);
+  return parts.join(':');
+}
+
+/**
+ * Extract all text content from an element (including nested tags).
  */
 export function extractFullContent($: CheerioAPI, element: Element): string {
-  const $element = $(element);
-
-  // Extract text recursively, preserving structure
   const parts: string[] = [];
 
   function traverse(node: Element) {
     $(node).contents().each((_, child) => {
       if (child.type === 'text') {
         const text = $(child).text().trim();
-        if (text) {
-          parts.push(text);
-        }
+        if (text) parts.push(text);
       } else if (child.type === 'tag') {
-        const $child = $(child as Element);
-        const tagName = (child as Element).name;
-        const childText = $child.text().trim();
-
-        if (childText) {
-          // Format nested tags as "Tag name: content"
-          const formatted = `${formatTagName(tagName)}: ${childText}`;
-          parts.push(formatted);
-        }
-
-        // Also traverse deeper
         traverse(child as Element);
       }
     });
   }
 
   traverse(element);
-
-  const content = parts.join('\n').trim();
-
-  // If no content found, use the tag name itself as the message
-  // This handles self-closing tags like <change to purple />
-  if (!content) {
-    const tagName = element.name;
-    return formatTagName(tagName);
-  }
-
-  return content;
-}
-
-/**
- * Format tag name for display (convert kebab-case to Title Case)
- */
-function formatTagName(tagName: string): string {
-  return tagName
-    .split(/[-_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * Get previous chat messages in the same chat scope
- */
-export function getPreviousChatMessages($: CheerioAPI, chatElement: Element): Array<{role: 'user' | 'ai', content: string}> {
-  const messages: Array<{role: 'user' | 'ai', content: string}> = [];
-  const $chat = $(chatElement);
-
-  $chat.children().each((_, child) => {
-    if (child.type !== 'tag') return;
-
-    const $child = $(child as Element);
-    const tagName = (child as Element).name;
-    const content = $child.text().trim();
-
-    if (tagName === 'ai' && content) {
-      // Previous AI response
-      messages.push({ role: 'ai', content });
-    } else if (tagName !== 'ai' && content) {
-      // Previous user message
-      messages.push({ role: 'user', content });
-    }
-  });
-
-  return messages;
-}
-
-/**
- * Describe the context for Claude in natural language
- */
-export function describeContext(scopes: ScopeContext[]): string {
-  if (scopes.length === 0) {
-    return 'You are working at the root level.';
-  }
-
-  const descriptions: string[] = [];
-
-  for (let i = scopes.length - 1; i >= 0; i--) {
-    const scope = scopes[i];
-    const attrStr = Object.entries(scope.attributes)
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(', ');
-
-    if (i === scopes.length - 1) {
-      // Current scope
-      descriptions.push(`a ${scope.element}${attrStr ? ` with ${attrStr}` : ''}`);
-    } else {
-      // Parent scopes
-      descriptions.push(`inside ${scope.element}${attrStr ? ` (${attrStr})` : ''}`);
-    }
-  }
-
-  return `You are working on ${descriptions.join(', ')}.`;
+  return parts.join('\n').trim();
 }

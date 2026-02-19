@@ -327,3 +327,408 @@ export interface GeneratedCode {
   fileExtension: string; // .html, .py, .sh, etc.
   metadata?: Record<string, any>; // Additional metadata
 }
+
+// ─── FQN (Fully Qualified Naming) ───────────────────────────────
+
+/**
+ * Parsed Fully Qualified Name for cross-file component addressing.
+ *
+ * Grammar: [project ":"] scope-path ["#" fragment [":" sub-path]] ["@" version]
+ *
+ * Examples:
+ *   my-service                              — relative, current scope
+ *   my-service#api                          — service's interface
+ *   my-service#api:users-add                — specific endpoint
+ *   system:cloud:arm:my-service             — absolute within project
+ *   acme-platform:system:cloud:arm:my-service — cross-project
+ *   redis@7.2#api                           — versioned
+ */
+export interface FQN {
+  /** Project name (e.g., 'acme-platform'). Absent for relative FQNs. */
+  project?: string;
+
+  /** Scope path segments (e.g., ['cloud', 'arm', 'my-service']) */
+  segments: string[];
+
+  /** Fragment type after '#' (e.g., 'api', 'impl', 'infra') */
+  fragment?: string;
+
+  /** Sub-path within fragment after fragment's ':' (e.g., ['users-add']) */
+  fragmentPath?: string[];
+
+  /** Version after '@' (e.g., '1.2.0') */
+  version?: string;
+
+  /** Original unparsed string */
+  raw: string;
+}
+
+export interface ResolvedRef {
+  /** The resolved FQN */
+  fqn: FQN;
+
+  /** File path where the component is defined */
+  file: string;
+
+  /** The component definition */
+  component: ComponentDefinition;
+
+  /** Resolved fragment content (if fragment specified) */
+  fragmentContent?: any;
+}
+
+export interface ProjectRegistry {
+  /** Known project names for absolute resolution */
+  projects: Map<string, ProjectManifest>;
+
+  /** All known components by FQN string */
+  components: Map<string, ComponentDefinition>;
+
+  /** Current project name */
+  currentProject: string;
+}
+
+export interface ProjectManifest {
+  /** Project name */
+  name: string;
+
+  /** Root directory */
+  root: string;
+
+  /** Auto-discover patterns */
+  autoDiscover?: AutoDiscoverPattern[];
+
+  /** Explicitly registered components */
+  components?: string[];
+}
+
+export interface AutoDiscoverPattern {
+  /** Directory path relative to project root */
+  path: string;
+
+  /** Glob pattern for matching files */
+  pattern: string;
+}
+
+// ─── Diff Types ─────────────────────────────────────────────────
+
+export type CdmlChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
+
+export interface CdmlElementChange {
+  /** Type of change */
+  type: CdmlChangeType;
+
+  /** Element tag name */
+  tagName: string;
+
+  /** Element path in the tree (e.g., 'component > interface > endpoints') */
+  path: string;
+
+  /** Old attributes (if modified or removed) */
+  oldAttributes?: Record<string, string>;
+
+  /** New attributes (if modified or added) */
+  newAttributes?: Record<string, string>;
+
+  /** Old text content */
+  oldText?: string;
+
+  /** New text content */
+  newText?: string;
+
+  /** Child element changes */
+  children?: CdmlElementChange[];
+}
+
+export interface CdmlDiffResult {
+  /** Whether any changes were detected */
+  hasChanges: boolean;
+
+  /** Root-level element changes */
+  changes: CdmlElementChange[];
+
+  /** Summary of change counts */
+  summary: {
+    added: number;
+    removed: number;
+    modified: number;
+    unchanged: number;
+  };
+}
+
+// ─── Plan Directive Types ───────────────────────────────────────
+
+export interface PlanDirective {
+  /** Scope path where the plan directive was found */
+  scope: string;
+
+  /** The plan instruction (from plan attribute value or <plan> element text) */
+  instruction: string;
+
+  /** Existing children that are immutable constraints */
+  existingChildren: string[];
+
+  /** The element with the plan directive */
+  element: any;
+}
+
+export type PlanQuestionType = 'open' | 'yes-no' | 'value' | 'select' | 'multi-select';
+
+export interface PlanQuestion {
+  /** Question type */
+  type: PlanQuestionType;
+
+  /** The question text */
+  question: string;
+
+  /** Available options (for select/multi-select) */
+  options?: string[];
+
+  /** User's answer (filled after user responds) */
+  answer?: string;
+}
+
+// ─── Component & Interface Types ────────────────────────────────
+
+export interface ComponentDefinition {
+  /** Fully qualified name */
+  fqn: FQN;
+
+  /** Component display name */
+  name: string;
+
+  /** File where this component is defined */
+  file: string;
+
+  /** What other components see */
+  interface?: InterfaceDefinition;
+
+  /** Environment requirements */
+  constraints?: ConstraintDefinition;
+
+  /** Dependencies referenced by interface only */
+  requires?: DependencyDefinition[];
+
+  /** Internal details, never exposed to dependents */
+  implementation?: any;
+
+  /** Additional aspect views */
+  aspects?: AspectDefinition[];
+}
+
+export interface InterfaceDefinition {
+  /** Interface facets (compute, network, api, storage, data, etc.) */
+  facets: InterfaceFacet[];
+
+  /** Interface type this component implements (e.g., 'sql-database') */
+  implements?: string;
+
+  /** Parent interface this extends */
+  extends?: string;
+}
+
+export interface InterfaceFacet {
+  /** Facet type identifier (e.g., 'compute', 'network', 'api', 'storage', 'data') */
+  type: string;
+
+  /** The facet-specific interface content */
+  content: any;
+}
+
+export interface ConstraintDefinition {
+  /** OS requirement */
+  os?: string;
+
+  /** Distribution */
+  distro?: string;
+
+  /** Architecture */
+  arch?: string;
+
+  /** Resource constraints */
+  resources?: Record<string, string>;
+
+  /** Port mappings */
+  ports?: Array<{ external: string; internal: string }>;
+
+  /** Required services */
+  services?: Array<{ name: string; port?: string; [key: string]: any }>;
+
+  /** Raw constraint attributes */
+  raw?: Record<string, string>;
+}
+
+export interface DependencyDefinition {
+  /** FQN of the dependency */
+  fqn: FQN;
+
+  /** Which facets the consumer needs (e.g., ['compute']) */
+  facets?: string[];
+
+  /** Brief purpose annotation */
+  usage?: string;
+
+  /** Additional config for the dependency */
+  config?: Record<string, string>;
+}
+
+export interface AspectDefinition {
+  /** Aspect type (infrastructure, api, data, security, monitoring) */
+  type: string;
+
+  /** File where this aspect is defined */
+  file: string;
+
+  /** FQN of the base component */
+  component: string;
+}
+
+export interface ProjectedInterface {
+  /** Where the interface came from */
+  sourceFqn: FQN;
+
+  /** Only the requested facets */
+  facets: InterfaceFacet[];
+
+  /** From dependency's usage/description */
+  purpose: string;
+}
+
+// ─── System Project & Environment Types ─────────────────────────
+
+export interface SystemProject {
+  /** System name */
+  name: string;
+
+  /** Components within the system */
+  components: SystemComponent[];
+
+  /** Project manifest path */
+  manifestPath: string;
+}
+
+export interface SystemComponent {
+  /** Component name */
+  name: string;
+
+  /** Component type (webapp, rest, service, etc.) */
+  type: string;
+
+  /** Whether this is a git submodule */
+  submodule: boolean;
+
+  /** Description */
+  description?: string;
+}
+
+export interface EnvironmentFileSet {
+  /** Base system file */
+  base: string;
+
+  /** Ordered override files (most general → most specific) */
+  overrides: string[];
+}
+
+// ─── Context Engine Types ───────────────────────────────────────
+
+export interface ContextManifest {
+  /** The .cdml file this context is for */
+  forFile: string;
+
+  /** Whether this was auto-generated */
+  autoGenerated: boolean;
+
+  /** Global refs and facts */
+  global: ContextGlobal;
+
+  /** Per-scope context mappings */
+  scopes: ContextScope[];
+}
+
+export interface ContextGlobal {
+  /** Global code/config references */
+  refs: ContextRef[];
+
+  /** Global architectural facts */
+  facts: ContextFact[];
+}
+
+export interface ContextScope {
+  /** Scope path (e.g., 'my-service > implementation > user-controller') */
+  path: string;
+
+  /** Interface contracts this scope fulfills or depends on */
+  interfaces: {
+    fulfills: Array<{ fqn: string }>;
+    depends: Array<{ fqn: string; facet?: string; usage?: string }>;
+  };
+
+  /** Code artifact references */
+  refs: ContextRef[];
+
+  /** Architectural facts */
+  facts: ContextFact[];
+
+  /** Tool access directives */
+  tools: ContextTool[];
+}
+
+export interface ContextRef {
+  /** File path */
+  file: string;
+
+  /** Role of this file (implementation, tests, type-definitions, etc.) */
+  role: string;
+
+  /** Specific line range (e.g., '15-22') */
+  lines?: string;
+
+  /** For config files: specific keys to include */
+  keys?: string;
+}
+
+export interface ContextFact {
+  /** The fact content */
+  content: string;
+
+  /** Decision source (e.g., 'plan:2025-02-18') */
+  decision?: string;
+}
+
+export interface ContextTool {
+  /** Tool name (Read, Write, etc.) */
+  name: string;
+
+  /** Scope restriction (glob pattern) */
+  scope: string;
+}
+
+/**
+ * Assembled prompt ready for headless Claude execution.
+ * This is the final output of the context engine.
+ */
+export interface AssembledPrompt {
+  /** The target state: changed .cdml element content */
+  target: string;
+
+  /** The current state: source code from refs */
+  current: Record<string, string>;
+
+  /** Interface contracts this scope must satisfy */
+  contracts: ProjectedInterface[];
+
+  /** Dependency interfaces (view-filtered) */
+  dependencies: ProjectedInterface[];
+
+  /** Locked siblings/children (immutable constraints) */
+  constraints: string[];
+
+  /** Persistent architectural decisions */
+  facts: ContextFact[];
+
+  /** Exact files to modify with their roles */
+  changeTargets: ContextRef[];
+
+  /** The final assembled prompt string */
+  prompt: string;
+}
