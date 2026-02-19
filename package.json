@@ -1,6 +1,6 @@
 {
   "name": "@claudiv/core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Claudiv core engine — types, FQN, differ, context engine, executor, projector, plan processor",
   "main": "dist/index.js",
   "type": "module",
@@ -21,6 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0",
     "cheerio": "^1.0.0",
     "domhandler": "^5.0.0",
     "htmlparser2": "^9.1.0"
