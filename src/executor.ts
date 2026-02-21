@@ -118,10 +118,12 @@ function resolveClaudeBin(): string {
 
 async function executeCli(prompt: string, config: ExecutorConfig): Promise<string> {
   const claudeBin = resolveClaudeBin();
-  const args = ['--print'];
-
-  // Disable all tools — Claudiv only needs text generation, no file/bash access
-  args.push('--allowedTools', '');
+  const args = [
+    '--print',
+    '--output-format', 'json',
+    '--max-turns', '1',
+    '--no-session-persistence',
+  ];
 
   if (config.model) {
     args.push('--model', config.model);
@@ -131,7 +133,6 @@ async function executeCli(prompt: string, config: ExecutorConfig): Promise<strin
     args.push('--max-tokens', String(config.maxTokens));
   }
 
-  // Pass prompt via -p flag
   args.push('-p', prompt);
 
   return new Promise((resolve, reject) => {
@@ -173,7 +174,14 @@ async function executeCli(prompt: string, config: ExecutorConfig): Promise<strin
     proc.on('close', (code) => {
       clearTimeout(timer);
       if (code === 0) {
-        resolve(stdout);
+        // Parse JSON output format
+        try {
+          const parsed = JSON.parse(stdout);
+          resolve(parsed.result || '');
+        } catch {
+          // Fall back to raw stdout if not valid JSON
+          resolve(stdout);
+        }
       } else {
         reject(new Error(`Claude CLI exited with code ${code}: ${stderr}`));
       }
