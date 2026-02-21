@@ -9,7 +9,7 @@
  * - API: Direct Anthropic API call
  */
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { createRequire } from 'module';
@@ -82,10 +82,20 @@ export async function executeClaudeHeadless(
 // ─── CLI Mode ───────────────────────────────────────────────────
 
 /**
- * Resolve the claude binary — prefer local node_modules, fall back to global.
+ * Resolve the claude binary — prefer global (user-authenticated), fall back to local.
  */
 function resolveClaudeBin(): string {
-  // Check local node_modules/.bin/claude (installed as project dependency)
+  // Prefer global claude (already authenticated by user)
+  try {
+    const globalPath = execSync('which claude', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    if (globalPath && existsSync(globalPath)) {
+      return globalPath;
+    }
+  } catch {
+    // No global claude
+  }
+
+  // Fall back to local node_modules/.bin/claude
   const localBin = join(process.cwd(), 'node_modules', '.bin', 'claude');
   if (existsSync(localBin)) {
     return localBin;
@@ -103,7 +113,6 @@ function resolveClaudeBin(): string {
     // Not installed locally
   }
 
-  // Fall back to global
   return 'claude';
 }
 
@@ -134,7 +143,11 @@ async function executeCli(prompt: string, config: ExecutorConfig): Promise<strin
     const spawnArgs = isScript ? [claudeBin, ...args] : args;
 
     const env = { ...process.env };
+    // Clear Claude Code session vars so spawned claude runs independently
     delete env.CLAUDECODE;
+    delete env.CLAUDE_CONFIG_DIR;
+    delete env.CLAUDE_CODE_SSE_PORT;
+    delete env.CLAUDE_CODE_ENTRYPOINT;
 
     const proc = spawn(command, spawnArgs, {
       stdio: ['pipe', 'pipe', 'pipe'],
