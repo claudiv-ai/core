@@ -261,6 +261,19 @@ function buildPromptString(ctx: Omit<AssembledPrompt, 'prompt'>): string {
     sections.push('');
   }
 
+  // Output format
+  sections.push('## Output Format');
+  sections.push('For each file, output a fenced code block with `file:` followed by the file path as the info string:');
+  sections.push('');
+  sections.push('```');
+  sections.push('```file:src/components/Canvas.tsx');
+  sections.push('// complete file contents');
+  sections.push('```');
+  sections.push('```');
+  sections.push('');
+  sections.push('Output ONLY fenced code blocks in this format. Do not include explanations outside of code blocks.');
+  sections.push('');
+
   // Instructions
   sections.push('## Instructions');
   sections.push('1. Implement the Target State changes');
@@ -268,7 +281,7 @@ function buildPromptString(ctx: Omit<AssembledPrompt, 'prompt'>): string {
   sections.push('3. Use dependency interfaces as specified');
   sections.push('4. Do not modify locked/constrained elements');
   sections.push('5. Follow architectural decisions listed above');
-  sections.push('6. Return complete file contents for each modified file');
+  sections.push('6. Return complete file contents using the Output Format above');
 
   return sections.join('\n');
 }

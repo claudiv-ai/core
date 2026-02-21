@@ -27,6 +27,14 @@ export { parseContextManifest, loadContextManifest, serializeContextManifest } f
 export { executeClaudeHeadless } from './executor.js';
 export type { ExecutionResult, ExecutorConfig } from './executor.js';
 
+// Response parser
+export { parseResponse } from './response-parser.js';
+export type { FileBlock } from './response-parser.js';
+
+// File committer
+export { commitFiles } from './committer.js';
+export type { CommitResult } from './committer.js';
+
 // Interface projection
 export { projectFacets, resolveProjectedDependencies, formatProjectedInterfaces } from './projector.js';
 
